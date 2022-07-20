@@ -80,19 +80,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
     commands
         .spawn_bundle(TransformBundle {
-            local: Transform::from_xyz(2.0, 0.0, -5.0),
-            global: GlobalTransform::identity(),
-        })
-        .with_children(|parent| {
-            parent.spawn_scene(my_gltf);
-        })
-        .insert(Monster);
-
-    // Player
-    let my_gltf = asset_server.load("m_player.glb#Scene0");
-    commands
-        .spawn_bundle(TransformBundle {
-            local: Transform::from_xyz(10.0, 0.0, -5.0),
+            local: Transform::from_xyz(2.0, 0.0, -5.0).with_scale(Vec3::ONE * 1.4),
             global: GlobalTransform::identity(),
         })
         .with_children(|parent| {
@@ -100,7 +88,20 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(0.5))
-        // .insert(Restitution::coefficient(0.7))
+        .insert(Monster);
+
+    // Player
+    let my_gltf = asset_server.load("m_player.glb#Scene0");
+    commands
+        .spawn_bundle(TransformBundle {
+            local: Transform::from_xyz(10.0, 0.0, -5.0).with_scale(Vec3::ONE * 0.3),
+            global: GlobalTransform::identity(),
+        })
+        .with_children(|parent| {
+            parent.spawn_scene(my_gltf);
+        })
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::ball(0.5))
         .insert(Character);
 }
 
@@ -135,15 +136,22 @@ fn face_character(
     let rot = transforms.get(camera).expect("transform").rotation;
     let mut character = transforms.get_mut(character).expect("transform");
 
-    // character.rotation = rot;
+    character.rotation = rot;
     // character.rotate(Quat::from_xyzw(0., rot.y, 0., 0.));
-    character.rotation = Quat::from_xyzw(
-        rot.x, // character.rotation.x,
-        rot.y, // character.rotation.y,
-        rot.z, // character.rotation.z,
-        rot.w,
-        // character.rotation.w,
-    );
+    // character.rotation = Quat::from_xyzw(
+    // 0.,
+    // // rot.x,
+    // // character.rotation.x,
+    // 0.,
+    // // rot.y,
+    // // character.rotation.y,
+    // 0.,
+    // // rot.z,
+    // // character.rotation.z,
+    // 0.,
+    // // rot.w,
+    // // character.rotation.w,
+    // );
 }
 
 fn move_character(
@@ -194,7 +202,7 @@ fn look_at_character(
             look.target = target.translation;
 
             let line = (look.eye - target.translation).normalize();
-            look.eye = target.translation + line * 50.;
+            look.eye = target.translation + line * 20.;
         }
     }
 }
