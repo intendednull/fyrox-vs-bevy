@@ -23,7 +23,6 @@ fn main() {
         .add_system(camera_input_map)
         .add_system(look_at_character)
         .add_system(move_character)
-        .add_system(face_character)
         .run();
 }
 
@@ -119,45 +118,11 @@ fn setup_scene_once_loaded(
     }
 }
 
-fn face_character(
-    mut transforms: Query<&mut Transform>,
-    character: Query<Entity, With<Character>>,
-    camera: Query<Entity, With<OrbitCameraController>>,
-) {
-    let character = match character.get_single() {
-        Ok(x) => x,
-        _ => return,
-    };
-    let camera = match camera.get_single() {
-        Ok(x) => x,
-        _ => return,
-    };
-
-    let rot = transforms.get(camera).expect("transform").rotation;
-    let mut character = transforms.get_mut(character).expect("transform");
-
-    character.rotation = rot;
-    // character.rotate(Quat::from_xyzw(0., rot.y, 0., 0.));
-    // character.rotation = Quat::from_xyzw(
-    // 0.,
-    // // rot.x,
-    // // character.rotation.x,
-    // 0.,
-    // // rot.y,
-    // // character.rotation.y,
-    // 0.,
-    // // rot.z,
-    // // character.rotation.z,
-    // 0.,
-    // // rot.w,
-    // // character.rotation.w,
-    // );
-}
-
 fn move_character(
     mut character: Query<&mut Transform, With<Character>>,
     camera: Query<&LookTransform, With<OrbitCameraController>>,
     keyboard: Res<Input<KeyCode>>,
+    time: Res<Time>,
 ) {
     let mut character = match character.get_single_mut() {
         Ok(x) => x,
@@ -168,28 +133,32 @@ fn move_character(
         _ => return,
     };
 
-    let line = (character.translation - camera.eye).normalize() * Vec3::new(1., 0., 1.);
-    let line_perp = {
-        let line = Vec2::new(line.x, line.z);
+    let direction = (character.translation - camera.eye).normalize() * Vec3::new(1., 0., 1.);
+    let direction_perp = {
+        let line = Vec2::new(direction.x, direction.z);
         let perp = line.perp();
 
         Vec3::new(perp.x, 0., perp.y)
     };
 
+    let t = character.translation - direction;
+    let dest_rot = character.looking_at(t, Vec3::Y).rotation;
+    character.rotation = character.rotation.lerp(dest_rot, 5. * time.delta_seconds());
+
     if keyboard.pressed(KeyCode::W) {
-        character.translation += line;
+        character.translation += direction;
     }
 
     if keyboard.pressed(KeyCode::S) {
-        character.translation -= line;
+        character.translation -= direction;
     }
 
     if keyboard.pressed(KeyCode::D) {
-        character.translation += line_perp;
+        character.translation += direction_perp;
     }
 
     if keyboard.pressed(KeyCode::A) {
-        character.translation -= line_perp;
+        character.translation -= direction_perp;
     }
 }
 
