@@ -1,5 +1,5 @@
 use bevy::{
-    input::mouse::{MouseMotion, MouseScrollUnit, MouseWheel},
+    input::mouse::{MouseMotion},
     prelude::*,
 };
 use bevy_editor_pls::prelude::*;
@@ -26,6 +26,7 @@ fn main() {
         .add_system(camera_input_map)
         .add_system(look_at_character)
         .add_system(move_character)
+        .add_system(face_character)
         .run();
 }
 
@@ -120,6 +121,37 @@ fn setup_scene_once_loaded(
     }
 }
 
+fn face_character(
+    mut transforms: Query<&mut Transform>,
+    character: Query<Entity, With<Character>>,
+    camera: Query<Entity, With<OrbitCameraController>>,
+) {
+    let character = match character.get_single() {
+        Ok(x) => x,
+        _ => return,
+    };
+    let camera = match camera.get_single() {
+        Ok(x) => x,
+        _ => return,
+    };
+
+    let _rot = transforms.get(camera).expect("transform").rotation;
+    let mut character = transforms.get_mut(character).expect("transform");
+
+    // character.rotation.y = rot.y;
+    // character.rotate(Quat::from_xyzw(0., rot.y / 2., 0., 0.));
+    character.rotation = Quat::from_xyzw(
+        // rot.x,
+        character.rotation.x,
+        // rot.y,
+        character.rotation.y,
+        // rot.z,
+        character.rotation.z,
+        // rot.w,
+        character.rotation.w,
+    );
+}
+
 fn move_character(
     mut character: Query<&mut Transform, With<Character>>,
     camera: Query<&LookTransform, With<OrbitCameraController>>,
@@ -134,11 +166,13 @@ fn move_character(
         _ => return,
     };
 
-    let line = (character.translation - camera.eye).normalize();
+    let line = (character.translation - camera.eye).normalize() * Vec3::new(1., 0., 1.);
+    let line_perp = {
+        let line = Vec2::new(line.x, line.z);
+        let perp = line.perp();
 
-    let t = character.translation;
-
-    character.look_at(t - line, t);
+        Vec3::new(perp.x, 0., perp.y)
+    };
 
     if keyboard.pressed(KeyCode::W) {
         character.translation += line;
@@ -146,6 +180,14 @@ fn move_character(
 
     if keyboard.pressed(KeyCode::S) {
         character.translation -= line;
+    }
+
+    if keyboard.pressed(KeyCode::D) {
+        character.translation += line_perp;
+    }
+
+    if keyboard.pressed(KeyCode::A) {
+        character.translation -= line_perp;
     }
 }
 
@@ -158,7 +200,7 @@ fn look_at_character(
             look.target = target.translation;
 
             let line = (look.eye - target.translation).normalize();
-            look.eye = target.translation + line * 100.;
+            look.eye = target.translation + line * 50.;
         }
     }
 }
