@@ -1,7 +1,4 @@
-use bevy::{
-    input::mouse::{MouseMotion},
-    prelude::*,
-};
+use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_editor_pls::prelude::*;
 use bevy_rapier3d::prelude::*;
 use smooth_bevy_cameras::{
@@ -135,20 +132,17 @@ fn face_character(
         _ => return,
     };
 
-    let _rot = transforms.get(camera).expect("transform").rotation;
+    let rot = transforms.get(camera).expect("transform").rotation;
     let mut character = transforms.get_mut(character).expect("transform");
 
-    // character.rotation.y = rot.y;
-    // character.rotate(Quat::from_xyzw(0., rot.y / 2., 0., 0.));
+    // character.rotation = rot;
+    // character.rotate(Quat::from_xyzw(0., rot.y, 0., 0.));
     character.rotation = Quat::from_xyzw(
-        // rot.x,
-        character.rotation.x,
-        // rot.y,
-        character.rotation.y,
-        // rot.z,
-        character.rotation.z,
-        // rot.w,
-        character.rotation.w,
+        rot.x, // character.rotation.x,
+        rot.y, // character.rotation.y,
+        rot.z, // character.rotation.z,
+        rot.w,
+        // character.rotation.w,
     );
 }
 
