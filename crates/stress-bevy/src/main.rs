@@ -1,8 +1,14 @@
-use bevy::prelude::*;
+use bevy::{
+    input::mouse::{MouseMotion, MouseScrollUnit, MouseWheel},
+    prelude::*,
+};
+use bevy_editor_pls::prelude::*;
 use bevy_rapier3d::prelude::*;
 use smooth_bevy_cameras::{
-    controllers::orbit::{OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin},
-    LookTransformPlugin,
+    controllers::orbit::{
+        ControlEvent, OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin,
+    },
+    LookTransform, LookTransformPlugin,
 };
 
 fn main() {
@@ -10,16 +16,24 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(EditorPlugin)
         .add_plugin(LookTransformPlugin)
-        .add_plugin(OrbitCameraPlugin::default())
+        .add_plugin(OrbitCameraPlugin {
+            override_input_system: true,
+        })
         .add_startup_system(setup)
-        .add_system(move_enemies)
         .add_system(setup_scene_once_loaded)
+        .add_system(camera_input_map)
+        .add_system(look_at_character)
+        .add_system(move_character)
         .run();
 }
 
 #[derive(Component)]
 struct Monster;
+
+#[derive(Component)]
+struct Character;
 
 struct MonsterAnimations(Vec<Handle<AnimationClip>>);
 
@@ -62,7 +76,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     // Insert a resource with the current scene information
     commands.insert_resource(MonsterAnimations(vec![
-        asset_server.load("monster-idleGLTF.glb#Animation0")
+        asset_server.load("monster-idleGLTF.glb#Animation0"), // asset_server.load("monster-idleGLTF.glb#Animation1")
     ]));
 
     let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
@@ -85,13 +99,17 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .with_children(|parent| {
             parent.spawn_scene(my_gltf);
-        });
+        })
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::ball(0.5))
+        // .insert(Restitution::coefficient(0.7))
+        .insert(Character);
 }
 
 // Once the scene is loaded, start the animation
 fn setup_scene_once_loaded(
     animations: Res<MonsterAnimations>,
-    mut player: Query<&mut AnimationPlayer>,
+    mut player: Query<&mut AnimationPlayer, With<Monster>>,
     mut done: Local<bool>,
 ) {
     if !*done {
@@ -102,8 +120,91 @@ fn setup_scene_once_loaded(
     }
 }
 
-fn move_enemies(mut query: Query<&mut Transform, With<Monster>>, time: Res<Time>) {
-    for mut transform in query.iter_mut() {
-        transform.translation.x += 2.0 * time.delta_seconds();
+fn move_character(
+    mut character: Query<&mut Transform, With<Character>>,
+    camera: Query<&LookTransform, With<OrbitCameraController>>,
+    keyboard: Res<Input<KeyCode>>,
+) {
+    let mut character = match character.get_single_mut() {
+        Ok(x) => x,
+        _ => return,
+    };
+    let camera = match camera.get_single() {
+        Ok(x) => x,
+        _ => return,
+    };
+
+    let line = (character.translation - camera.eye).normalize();
+
+    let t = character.translation;
+
+    character.look_at(t - line, t);
+
+    if keyboard.pressed(KeyCode::W) {
+        character.translation += line;
     }
+
+    if keyboard.pressed(KeyCode::S) {
+        character.translation -= line;
+    }
+}
+
+fn look_at_character(
+    mut cameras: Query<&mut LookTransform, With<OrbitCameraController>>,
+    character: Query<&Transform, (Changed<Transform>, With<Character>)>,
+) {
+    for mut look in cameras.iter_mut() {
+        if let Ok(target) = character.get_single() {
+            look.target = target.translation;
+
+            let line = (look.eye - target.translation).normalize();
+            look.eye = target.translation + line * 100.;
+        }
+    }
+}
+
+fn camera_input_map(
+    mut events: EventWriter<ControlEvent>,
+    mut mouse_motion_events: EventReader<MouseMotion>,
+    mouse_buttons: Res<Input<MouseButton>>,
+    controllers: Query<&OrbitCameraController>,
+) {
+    // Can only control one camera at a time.
+    let controller = if let Some(controller) = controllers.iter().find(|c| c.enabled) {
+        controller
+    } else {
+        return;
+    };
+    let OrbitCameraController {
+        mouse_rotate_sensitivity,
+        mouse_translate_sensitivity,
+        ..
+    } = *controller;
+
+    let mut cursor_delta = Vec2::ZERO;
+    for event in mouse_motion_events.iter() {
+        cursor_delta += event.delta;
+    }
+
+    if cursor_delta != Vec2::ZERO {
+        events.send(ControlEvent::Orbit(mouse_rotate_sensitivity * cursor_delta));
+    }
+
+    if mouse_buttons.pressed(MouseButton::Right) {
+        events.send(ControlEvent::TranslateTarget(
+            mouse_translate_sensitivity * cursor_delta,
+        ));
+    }
+
+    // let mut scalar = 1.0;
+    // for event in mouse_wheel_reader.iter() {
+    // // scale the event magnitude per pixel or per line
+    // let scroll_amount = match event.unit {
+    // MouseScrollUnit::Line => event.y,
+    // MouseScrollUnit::Pixel => event.y / pixels_per_line,
+    // };
+    // scalar *= 1.0 - scroll_amount * mouse_wheel_zoom_sensitivity;
+    // }
+
+    // events.send(ControlEvent::Zoom(scalar));
 }
