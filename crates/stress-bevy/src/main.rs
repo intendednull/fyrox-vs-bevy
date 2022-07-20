@@ -23,6 +23,7 @@ fn main() {
         .add_system(camera_input_map)
         .add_system(look_at_character)
         .add_system(move_character)
+        .add_system(setup_helpers)
         .run();
 }
 
@@ -32,7 +33,13 @@ struct Monster;
 #[derive(Component)]
 struct Character;
 
-struct MonsterAnimations(Vec<Handle<AnimationClip>>);
+struct MonsterAnimations {
+    idle: Handle<AnimationClip>,
+}
+
+struct CharacterAnimations {
+    idle: Handle<AnimationClip>,
+}
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Camera
@@ -72,9 +79,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Monster
 
     // Insert a resource with the current scene information
-    commands.insert_resource(MonsterAnimations(vec![
-        asset_server.load("monster-idleGLTF.glb#Animation0"), // asset_server.load("monster-idleGLTF.glb#Animation1")
-    ]));
 
     let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
     commands
@@ -87,7 +91,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(0.5))
+        .insert(AnimationHelperSetup)
         .insert(Monster);
+
+    commands.insert_resource(MonsterAnimations {
+        idle: asset_server.load("monster-idleGLTF.glb#Animation0"),
+    });
 
     // Player
     let my_gltf = asset_server.load("m_player.glb#Scene0");
@@ -101,18 +110,34 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(RigidBody::Dynamic)
         .insert(Collider::ball(0.5))
+        .insert(AnimationHelperSetup)
         .insert(Character);
+
+    commands.insert_resource(CharacterAnimations {
+        idle: asset_server.load("m_player.glb#Animation0"),
+    });
 }
 
 // Once the scene is loaded, start the animation
 fn setup_scene_once_loaded(
-    animations: Res<MonsterAnimations>,
-    mut player: Query<&mut AnimationPlayer, With<Monster>>,
+    monster_animations: Res<MonsterAnimations>,
+    character_animations: Res<CharacterAnimations>,
+    monsters: Query<&Monster>,
+    characters: Query<&Character>,
+    animation_helpers: Query<(Entity, &AnimationHelper)>,
+    mut players: Query<&mut AnimationPlayer>,
     mut done: Local<bool>,
 ) {
     if !*done {
-        if let Ok(mut player) = player.get_single_mut() {
-            player.play(animations.0[0].clone_weak()).repeat();
+        for (id, &AnimationHelper(player_id)) in animation_helpers.iter() {
+            if monsters.get(id).is_ok() {
+                let mut player = players.get_mut(player_id).unwrap();
+                player.play(monster_animations.idle.clone_weak()).repeat();
+            } else if characters.get(id).is_ok() {
+                let mut player = players.get_mut(player_id).unwrap();
+                player.play(character_animations.idle.clone_weak()).repeat();
+            }
+
             *done = true;
         }
     }
@@ -208,16 +233,47 @@ fn camera_input_map(
             mouse_translate_sensitivity * cursor_delta,
         ));
     }
+}
 
-    // let mut scalar = 1.0;
-    // for event in mouse_wheel_reader.iter() {
-    // // scale the event magnitude per pixel or per line
-    // let scroll_amount = match event.unit {
-    // MouseScrollUnit::Line => event.y,
-    // MouseScrollUnit::Pixel => event.y / pixels_per_line,
-    // };
-    // scalar *= 1.0 - scroll_amount * mouse_wheel_zoom_sensitivity;
-    // }
+#[derive(Debug, Component)]
+pub struct AnimationHelperSetup;
+#[derive(Debug, Component)]
+pub struct AnimationHelper(Entity);
 
-    // events.send(ControlEvent::Zoom(scalar));
+pub fn setup_helpers(
+    mut commands: Commands,
+    to_setup: Query<Entity, With<AnimationHelperSetup>>,
+    children: Query<&Children>,
+    players: Query<&AnimationPlayer>,
+) {
+    for host_entity in to_setup.iter() {
+        if let Some(animation_player) =
+            find_animation_player_entity(host_entity, &children, &players)
+        {
+            commands
+                .entity(host_entity)
+                .remove::<AnimationHelperSetup>()
+                .insert(AnimationHelper(animation_player)); // This is how I find it later and  what I query for
+        }
+    }
+}
+
+fn find_animation_player_entity(
+    parent: Entity,
+    children: &Query<&Children>,
+    players: &Query<&AnimationPlayer>,
+) -> Option<Entity> {
+    if let Ok(candidates) = children.get(parent) {
+        let mut next_candidates: Vec<Entity> = candidates.iter().map(|e| e.to_owned()).collect();
+        while !next_candidates.is_empty() {
+            for candidate in next_candidates.drain(..).collect::<Vec<Entity>>() {
+                if players.get(candidate).is_ok() {
+                    return Some(candidate);
+                } else if let Ok(new) = children.get(candidate) {
+                    next_candidates.extend(new.iter());
+                }
+            }
+        }
+    }
+    None
 }
