@@ -1,4 +1,4 @@
-use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy::{input::mouse::MouseMotion, prelude::*, winit::WinitSettings};
 use bevy_editor_pls::prelude::*;
 use bevy_rapier3d::prelude::*;
 use smooth_bevy_cameras::{
@@ -18,6 +18,7 @@ fn main() {
         .add_plugin(OrbitCameraPlugin {
             override_input_system: true,
         })
+        .insert_resource(WinitSettings::desktop_app())
         .add_startup_system(setup)
         .add_system(setup_scene_once_loaded)
         .add_system(camera_input_map)
@@ -48,7 +49,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Camera
+    // 3D Camera
     commands
         .spawn_bundle(PerspectiveCameraBundle::default())
         .insert_bundle(OrbitCameraBundle::new(
@@ -57,6 +58,23 @@ fn setup(
             Vec3::new(-2.0, 5.0, 5.0),
             Vec3::new(0., 0., 0.),
         ));
+
+    // UI Camera
+    commands.spawn_bundle(UiCameraBundle::default());
+
+    commands.spawn_bundle(ImageBundle {
+        style: Style {
+            align_self: AlignSelf::Center,
+            position: Rect {
+                left: Val::Percent(47.5),
+                ..default()
+            },
+            ..default()
+        },
+        image_mode: bevy::ui::widget::ImageMode::KeepAspect,
+        image: UiImage(asset_server.load("crosshair.png")),
+        ..default()
+    });
 
     // Ground
     commands
@@ -227,7 +245,7 @@ fn look_at_character(
 ) {
     for mut look in cameras.iter_mut() {
         if let Ok(target) = character.get_single() {
-            look.target = target.translation + Vec3::Y * 2. + Vec3::X * 2.;
+            look.target = target.translation + Vec3::Y * 4.;
 
             let line = (look.eye - target.translation).normalize();
             look.eye = target.translation + line * 20.;
