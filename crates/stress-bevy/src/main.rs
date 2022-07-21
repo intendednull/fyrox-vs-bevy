@@ -26,6 +26,7 @@ fn main() {
         .add_system(move_character)
         .add_system(setup_helpers)
         .add_system(hacky_height_fix)
+        .add_system(launch_projectile)
         .run();
 }
 
@@ -328,4 +329,41 @@ fn find_animation_player_entity(
         }
     }
     None
+}
+
+fn launch_projectile(
+    character: Query<&mut Transform, With<Character>>,
+    camera: Query<&LookTransform, With<OrbitCameraController>>,
+    monsters: Query<Entity, With<Monster>>,
+    mouse_button: Res<Input<MouseButton>>,
+    time: Res<Time>,
+    rapier_context: Res<RapierContext>,
+    mut commands: Commands,
+) {
+    if !mouse_button.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    let character = match character.get_single() {
+        Ok(x) => x,
+        _ => return,
+    };
+
+    let camera = match camera.get_single() {
+        Ok(x) => x,
+        _ => return,
+    };
+
+    let ray_dir = -(camera.eye - camera.target).normalize();
+    let ray_pos = character.translation + ray_dir * 2.;
+    let max_toi = 1000.;
+    let solid = false;
+    let filter = QueryFilter::new();
+
+    if let Some((entity, _toi)) = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter)
+    {
+        if let Ok(monster) = monsters.get(entity) {
+            commands.entity(monster).despawn_recursive();
+        }
+    }
 }
