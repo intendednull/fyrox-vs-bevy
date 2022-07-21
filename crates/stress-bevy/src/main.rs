@@ -24,6 +24,7 @@ fn main() {
         .add_system(look_at_character)
         .add_system(move_character)
         .add_system(setup_helpers)
+        .add_system(hacky_height_fix)
         .run();
 }
 
@@ -41,7 +42,12 @@ struct CharacterAnimations {
     idle: Handle<AnimationClip>,
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     // Camera
     commands
         .spawn_bundle(PerspectiveCameraBundle::default())
@@ -55,6 +61,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Ground
     commands
         .spawn()
+        .insert_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 100. })),
+            material: materials.add(Color::WHITE.into()),
+            ..Default::default()
+        })
         .insert(Collider::cuboid(100.0, 0.1, 100.0))
         .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
 
@@ -69,28 +80,19 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..default()
     });
 
-    // commands
-    // .spawn()
-    // .insert(RigidBody::Dynamic)
-    // .insert(Collider::ball(0.5))
-    // .insert(Restitution::coefficient(0.7))
-    // .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, 4.0, 0.0)));
-
     // Monster
-
-    // Insert a resource with the current scene information
-
-    let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
     commands
         .spawn_bundle(TransformBundle {
-            local: Transform::from_xyz(2.0, 0.0, -5.0).with_scale(Vec3::ONE * 1.4),
+            local: Transform::from_xyz(0., 1.0, 10.).with_scale(Vec3::ONE * 1.4),
             global: GlobalTransform::identity(),
         })
         .with_children(|parent| {
+            let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
             parent.spawn_scene(my_gltf);
         })
         .insert(RigidBody::Dynamic)
-        .insert(Collider::ball(0.5))
+        // .insert(Collider::ball(2.))
+        .insert(Collider::cuboid(1., 3., 1.))
         .insert(AnimationHelperSetup)
         .insert(Monster);
 
@@ -99,18 +101,26 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 
     // Player
-    let my_gltf = asset_server.load("m_player.glb#Scene0");
     commands
         .spawn_bundle(TransformBundle {
-            local: Transform::from_xyz(10.0, 0.0, -5.0).with_scale(Vec3::ONE * 0.3),
+            local: Transform::from_xyz(10.0, 0.0, 0.0).with_scale(Vec3::ONE * 0.3),
             global: GlobalTransform::identity(),
         })
         .with_children(|parent| {
+            let my_gltf = asset_server.load("m_player.glb#Scene0");
             parent.spawn_scene(my_gltf);
+
+            // parent
+            // .spawn_bundle(TransformBundle {
+            // local: Transform::from_xyz(0., 5.0, 0.),
+            // global: GlobalTransform::identity(),
+            // })
+            // .insert(RigidBody::Dynamic)
+            // .insert(Collider::cuboid(0.5, 5.5, 0.5));
         })
-        .insert(RigidBody::Dynamic)
-        .insert(Collider::ball(0.5))
         .insert(AnimationHelperSetup)
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::cuboid(2., 9., 2.))
         .insert(Character);
 
     commands.insert_resource(CharacterAnimations {
@@ -139,6 +149,30 @@ fn setup_scene_once_loaded(
             }
 
             *done = true;
+        }
+    }
+}
+
+fn hacky_height_fix(
+    children: Query<&Children>,
+    mut transforms: Query<&mut Transform>,
+    characters: Query<Entity, With<Character>>,
+    monsters: Query<Entity, With<Monster>>,
+    mut fixed: Local<bool>,
+) {
+    for character in characters.iter() {
+        let children = children.get(character).unwrap();
+        for child in children.iter() {
+            transforms.get_mut(*child).unwrap().translation.y = -9.;
+            *fixed = true;
+        }
+    }
+
+    for monster in monsters.iter() {
+        let children = children.get(monster).unwrap();
+        for child in children.iter() {
+            transforms.get_mut(*child).unwrap().translation.y = -3.;
+            *fixed = true;
         }
     }
 }
@@ -193,7 +227,7 @@ fn look_at_character(
 ) {
     for mut look in cameras.iter_mut() {
         if let Ok(target) = character.get_single() {
-            look.target = target.translation;
+            look.target = target.translation + Vec3::Y * 2. + Vec3::X * 2.;
 
             let line = (look.eye - target.translation).normalize();
             look.eye = target.translation + line * 20.;
