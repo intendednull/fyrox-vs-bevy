@@ -229,7 +229,7 @@ fn move_character(
         let line = Vec2::new(direction.x, direction.z);
         let perp = line.perp();
 
-        Vec3::new(perp.x, 0., perp.y)
+        Vec3::new(perp.x, 0., perp.y) / 2.
     };
 
     let t = character.translation - direction;
