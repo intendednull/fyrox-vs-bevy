@@ -1,6 +1,6 @@
-use bevy::{input::mouse::MouseMotion, prelude::*, winit::WinitSettings};
+use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_editor_pls::prelude::*;
-use bevy_rapier3d::{prelude::*, rapier::prelude::CollisionEventFlags};
+use bevy_rapier3d::prelude::*;
 use smooth_bevy_cameras::{
     controllers::orbit::{
         ControlEvent, OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin,
@@ -12,24 +12,23 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        // .add_plugin(RapierDebugRenderPlugin::default())
-        // .add_plugin(EditorPlugin)
+        .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(EditorPlugin)
         .add_plugin(LookTransformPlugin)
         .add_plugin(OrbitCameraPlugin {
             override_input_system: true,
         })
-        .insert_resource(WinitSettings::desktop_app())
         .add_startup_system(setup)
         .add_system(setup_scene_once_loaded)
         .add_system(
             camera_input_map
-                .before(look_at_character)
                 .before(move_character)
+                .before(look_at_character)
                 .before(hacky_height_fix)
                 .before(launch_projectile),
         )
-        .add_system(look_at_character)
         .add_system(move_character)
+        .add_system(look_at_character)
         .add_system(setup_helpers)
         .add_system(hacky_height_fix)
         .add_system(launch_projectile)
@@ -95,7 +94,7 @@ fn setup(
         .spawn()
         .insert_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Plane { size: 100. })),
-            material: materials.add(Color::WHITE.into()),
+            material: materials.add(Color::ALICE_BLUE.into()),
             ..Default::default()
         })
         .insert(Collider::cuboid(100.0, 0.01, 100.0))
@@ -133,20 +132,15 @@ fn setup(
         .with_children(|parent| {
             let my_gltf = asset_server.load("m_player.glb#Scene0");
             parent.spawn_scene(my_gltf);
-
-            // parent
-            // .spawn_bundle(TransformBundle {
-            // local: Transform::from_xyz(0., 5.0, 0.),
-            // global: GlobalTransform::identity(),
-            // })
-            // .insert(RigidBody::Dynamic)
-            // .insert(Collider::cuboid(0.5, 5.5, 0.5));
         })
-        .insert(AnimationHelperSetup)
-        .insert(HackyHeightFix)
-        .insert(RigidBody::Dynamic)
-        .insert(Collider::cuboid(2., 9., 2.))
-        .insert(Character);
+        .insert_bundle((
+            AnimationHelperSetup,
+            HackyHeightFix,
+            RigidBody::Dynamic,
+            Collider::cuboid(2., 9., 2.),
+            Friction::coefficient(0.),
+            Character,
+        ));
 
     commands.insert_resource(CharacterAnimations {
         idle: asset_server.load("m_player.glb#Animation0"),
@@ -182,20 +176,18 @@ fn setup_scene_once_loaded(
     characters: Query<&Character>,
     animation_helpers: Query<(Entity, &AnimationHelper)>,
     mut players: Query<&mut AnimationPlayer>,
-    mut done: Local<bool>,
+    mut commands: Commands,
 ) {
-    if !*done {
-        for (id, &AnimationHelper(player_id)) in animation_helpers.iter() {
-            if monsters.get(id).is_ok() {
-                let mut player = players.get_mut(player_id).unwrap();
-                player.play(monster_animations.idle.clone_weak()).repeat();
-            } else if characters.get(id).is_ok() {
-                let mut player = players.get_mut(player_id).unwrap();
-                player.play(character_animations.idle.clone_weak()).repeat();
-            }
-
-            *done = true;
+    for (id, &AnimationHelper(player_id)) in animation_helpers.iter() {
+        if monsters.get(id).is_ok() {
+            let mut player = players.get_mut(player_id).unwrap();
+            player.play(monster_animations.idle.clone_weak()).repeat();
+        } else if characters.get(id).is_ok() {
+            let mut player = players.get_mut(player_id).unwrap();
+            player.play(character_animations.idle.clone_weak()).repeat();
         }
+
+        commands.entity(id).remove::<AnimationHelper>();
     }
 }
 
@@ -224,15 +216,11 @@ fn hacky_height_fix(
 }
 
 fn move_character(
-    mut character: Query<&mut Transform, With<Character>>,
+    mut character: Query<&mut Transform, (With<Character>, Changed<Transform>)>,
     camera: Query<&LookTransform, With<OrbitCameraController>>,
     keyboard: Res<Input<KeyCode>>,
     time: Res<Time>,
 ) {
-    if !keyboard.is_changed() {
-        return;
-    }
-
     let mut character = match character.get_single_mut() {
         Ok(x) => x,
         _ => return,
@@ -247,34 +235,54 @@ fn move_character(
         let line = Vec2::new(direction.x, direction.z);
         let perp = line.perp();
 
-        Vec3::new(perp.x, 0., perp.y) / 2.
+        Vec3::new(perp.x, 0., perp.y)
     };
 
-    let t = character.translation - direction;
-    let dest_rot = character.looking_at(t, Vec3::Y).rotation;
+    let dest_rot = character
+        .looking_at(character.translation - direction, Vec3::Y)
+        .rotation;
     character.rotation = character.rotation.lerp(dest_rot, 5. * time.delta_seconds());
 
+    if !keyboard.is_changed() {
+        return;
+    }
+
+    let mut delta = Vec3::ZERO;
+
     if keyboard.pressed(KeyCode::W) {
-        character.translation += direction;
+        delta += direction;
     }
 
     if keyboard.pressed(KeyCode::S) {
-        character.translation -= direction;
+        delta -= direction;
     }
 
     if keyboard.pressed(KeyCode::D) {
-        character.translation += direction_perp;
+        delta += direction_perp;
     }
 
     if keyboard.pressed(KeyCode::A) {
-        character.translation -= direction_perp;
+        delta -= direction_perp;
     }
+
+    if delta == Vec3::ZERO {
+        return;
+    }
+
+    character.translation = character.translation.lerp(
+        character.translation + delta.normalize(),
+        time.delta_seconds() * 10.,
+    );
 }
 
 fn look_at_character(
     mut cameras: Query<&mut LookTransform, With<OrbitCameraController>>,
     character: Query<&Transform, (Changed<Transform>, With<Character>)>,
 ) {
+    if character.is_empty() {
+        return;
+    }
+
     for mut look in cameras.iter_mut() {
         if let Ok(target) = character.get_single() {
             look.target = target.translation + Vec3::Y * 4.;
@@ -409,7 +417,6 @@ fn launch_projectile(
         .insert(Velocity {
             linvel: direction * 200.,
             angvel: Vec3::ZERO,
-            // angvel: Vec3::new(0.2, 0.4, 0.8),
         })
         .insert_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
@@ -419,8 +426,10 @@ fn launch_projectile(
             material: materials.add(Color::DARK_GREEN.into()),
             ..Default::default()
         })
-        .insert(Collider::ball(radius))
-        .insert(Projectile)
-        .insert(ActiveEvents::COLLISION_EVENTS)
-        .insert_bundle(TransformBundle::from(Transform::from_translation(pos)));
+        .insert_bundle(TransformBundle::from(Transform::from_translation(pos)))
+        .insert_bundle((
+            Collider::ball(radius),
+            Projectile,
+            ActiveEvents::COLLISION_EVENTS,
+        ));
 }
