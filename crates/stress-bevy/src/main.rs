@@ -1,6 +1,6 @@
 use bevy::{input::mouse::MouseMotion, prelude::*, winit::WinitSettings};
 use bevy_editor_pls::prelude::*;
-use bevy_rapier3d::prelude::*;
+use bevy_rapier3d::{prelude::*, rapier::prelude::CollisionEventFlags};
 use smooth_bevy_cameras::{
     controllers::orbit::{
         ControlEvent, OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin,
@@ -27,8 +27,12 @@ fn main() {
         .add_system(setup_helpers)
         .add_system(hacky_height_fix)
         .add_system(launch_projectile)
+        .add_system(detect_projectile_collision)
         .run();
 }
+
+#[derive(Component)]
+struct HitDetection;
 
 #[derive(Component)]
 struct Monster;
@@ -81,7 +85,7 @@ fn setup(
     commands
         .spawn()
         .insert_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 100. })),
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 1000. })),
             material: materials.add(Color::WHITE.into()),
             ..Default::default()
         })
@@ -100,20 +104,7 @@ fn setup(
     });
 
     // Monster
-    commands
-        .spawn_bundle(TransformBundle {
-            local: Transform::from_xyz(0., 1.0, 10.).with_scale(Vec3::ONE * 1.4),
-            global: GlobalTransform::identity(),
-        })
-        .with_children(|parent| {
-            let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
-            parent.spawn_scene(my_gltf);
-        })
-        .insert(RigidBody::Dynamic)
-        // .insert(Collider::ball(2.))
-        .insert(Collider::cuboid(1., 3., 1.))
-        .insert(AnimationHelperSetup)
-        .insert(Monster);
+    spawn_monster(&mut commands, &asset_server);
 
     commands.insert_resource(MonsterAnimations {
         idle: asset_server.load("monster-idleGLTF.glb#Animation0"),
@@ -145,6 +136,24 @@ fn setup(
     commands.insert_resource(CharacterAnimations {
         idle: asset_server.load("m_player.glb#Animation0"),
     });
+}
+
+fn spawn_monster(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+    commands
+        .spawn_bundle(TransformBundle {
+            local: Transform::from_xyz(0., 1.0, 10.).with_scale(Vec3::ONE * 1.4),
+            global: GlobalTransform::identity(),
+        })
+        .with_children(|parent| {
+            let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
+            parent.spawn_scene(my_gltf);
+        })
+        .insert(RigidBody::Dynamic)
+        .insert(GravityScale(10.))
+        .insert(Collider::cuboid(1., 3., 1.))
+        .insert(AnimationHelperSetup)
+        .insert(Monster)
+        .insert(HitDetection);
 }
 
 // Once the scene is loaded, start the animation
@@ -331,14 +340,36 @@ fn find_animation_player_entity(
     None
 }
 
+#[derive(Component)]
+struct Projectile;
+
+fn detect_projectile_collision(
+    detection: Query<Entity, With<HitDetection>>,
+    projectiles: Query<Entity, With<Projectile>>,
+    mut collision_events: EventReader<CollisionEvent>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    for collision_event in collision_events.iter() {
+        if let CollisionEvent::Started(a, b, _flags) = collision_event {
+            let detection = detection.get(*a).or_else(|_| detection.get(*b));
+            let projectile = projectiles.get(*a).or_else(|_| projectiles.get(*b));
+
+            if let (Ok(detection), Ok(_)) = (detection, projectile) {
+                // commands.entity(detection).remove::<Projectile>();
+                spawn_monster(&mut commands, &asset_server);
+            }
+        }
+    }
+}
+
 fn launch_projectile(
     character: Query<&mut Transform, With<Character>>,
     camera: Query<&LookTransform, With<OrbitCameraController>>,
-    monsters: Query<Entity, With<Monster>>,
     mouse_button: Res<Input<MouseButton>>,
-    time: Res<Time>,
-    rapier_context: Res<RapierContext>,
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     if !mouse_button.just_pressed(MouseButton::Left) {
         return;
@@ -354,16 +385,28 @@ fn launch_projectile(
         _ => return,
     };
 
-    let ray_dir = -(camera.eye - camera.target).normalize();
-    let ray_pos = character.translation + ray_dir * 2.;
-    let max_toi = 1000.;
-    let solid = false;
-    let filter = QueryFilter::new();
+    let direction = -(camera.eye - camera.target).normalize();
+    let pos = character.translation + direction * 2.;
+    let radius = 0.5;
 
-    if let Some((entity, _toi)) = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter)
-    {
-        if let Ok(monster) = monsters.get(entity) {
-            commands.entity(monster).despawn_recursive();
-        }
-    }
+    commands
+        .spawn()
+        .insert(RigidBody::Dynamic)
+        .insert(Velocity {
+            linvel: direction * 100.,
+            angvel: Vec3::ZERO,
+            // angvel: Vec3::new(0.2, 0.4, 0.8),
+        })
+        .insert_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Icosphere {
+                radius,
+                ..default()
+            })),
+            material: materials.add(Color::DARK_GREEN.into()),
+            ..Default::default()
+        })
+        .insert(Collider::ball(radius))
+        .insert(Projectile)
+        .insert(ActiveEvents::COLLISION_EVENTS)
+        .insert_bundle(TransformBundle::from(Transform::from_translation(pos)));
 }
