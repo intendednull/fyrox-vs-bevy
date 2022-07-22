@@ -12,8 +12,8 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(EditorPlugin)
+        // .add_plugin(RapierDebugRenderPlugin::default())
+        // .add_plugin(EditorPlugin)
         .add_plugin(LookTransformPlugin)
         .add_plugin(OrbitCameraPlugin {
             override_input_system: true,
@@ -21,7 +21,13 @@ fn main() {
         .insert_resource(WinitSettings::desktop_app())
         .add_startup_system(setup)
         .add_system(setup_scene_once_loaded)
-        .add_system(camera_input_map)
+        .add_system(
+            camera_input_map
+                .before(look_at_character)
+                .before(move_character)
+                .before(hacky_height_fix)
+                .before(launch_projectile),
+        )
         .add_system(look_at_character)
         .add_system(move_character)
         .add_system(setup_helpers)
@@ -30,6 +36,9 @@ fn main() {
         .add_system(detect_projectile_collision)
         .run();
 }
+
+#[derive(Component)]
+struct HackyHeightFix;
 
 #[derive(Component)]
 struct HitDetection;
@@ -85,11 +94,12 @@ fn setup(
     commands
         .spawn()
         .insert_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 1000. })),
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 100. })),
             material: materials.add(Color::WHITE.into()),
             ..Default::default()
         })
-        .insert(Collider::cuboid(100.0, 0.1, 100.0))
+        .insert(Collider::cuboid(100.0, 0.01, 100.0))
+        .insert(RigidBody::KinematicPositionBased)
         .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
 
     // light
@@ -117,7 +127,7 @@ fn setup(
     // Player
     commands
         .spawn_bundle(TransformBundle {
-            local: Transform::from_xyz(10.0, 0.0, 0.0).with_scale(Vec3::ONE * 0.3),
+            local: Transform::from_xyz(10.0, 0.2, 0.0).with_scale(Vec3::ONE * 0.3),
             global: GlobalTransform::identity(),
         })
         .with_children(|parent| {
@@ -133,6 +143,7 @@ fn setup(
             // .insert(Collider::cuboid(0.5, 5.5, 0.5));
         })
         .insert(AnimationHelperSetup)
+        .insert(HackyHeightFix)
         .insert(RigidBody::Dynamic)
         .insert(Collider::cuboid(2., 9., 2.))
         .insert(Character);
@@ -152,12 +163,15 @@ fn spawn_monster(transform: Transform, commands: &mut Commands, asset_server: &R
             let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
             parent.spawn_scene(my_gltf);
         })
-        .insert(RigidBody::Dynamic)
-        .insert(GravityScale(10.))
-        .insert(Collider::cuboid(1., 3., 1.))
-        .insert(AnimationHelperSetup)
-        .insert(Monster)
-        .insert(HitDetection);
+        .insert_bundle((
+            RigidBody::Dynamic,
+            GravityScale(10.),
+            Collider::cuboid(1., 3., 1.),
+            AnimationHelperSetup,
+            Monster,
+            HackyHeightFix,
+            HitDetection,
+        ));
 }
 
 // Once the scene is loaded, start the animation
@@ -188,15 +202,15 @@ fn setup_scene_once_loaded(
 fn hacky_height_fix(
     children: Query<&Children>,
     mut transforms: Query<&mut Transform>,
-    characters: Query<Entity, With<Character>>,
-    monsters: Query<Entity, With<Monster>>,
-    mut fixed: Local<bool>,
+    characters: Query<Entity, (With<Character>, With<HackyHeightFix>)>,
+    monsters: Query<Entity, (With<Monster>, With<HackyHeightFix>)>,
+    mut commands: Commands,
 ) {
     for character in characters.iter() {
         let children = children.get(character).unwrap();
         for child in children.iter() {
             transforms.get_mut(*child).unwrap().translation.y = -9.;
-            *fixed = true;
+            commands.entity(character).remove::<HackyHeightFix>();
         }
     }
 
@@ -204,7 +218,7 @@ fn hacky_height_fix(
         let children = children.get(monster).unwrap();
         for child in children.iter() {
             transforms.get_mut(*child).unwrap().translation.y = -3.;
-            *fixed = true;
+            commands.entity(monster).remove::<HackyHeightFix>();
         }
     }
 }
@@ -215,6 +229,10 @@ fn move_character(
     keyboard: Res<Input<KeyCode>>,
     time: Res<Time>,
 ) {
+    if !keyboard.is_changed() {
+        return;
+    }
+
     let mut character = match character.get_single_mut() {
         Ok(x) => x,
         _ => return,
@@ -270,7 +288,6 @@ fn look_at_character(
 fn camera_input_map(
     mut events: EventWriter<ControlEvent>,
     mut mouse_motion_events: EventReader<MouseMotion>,
-    mouse_buttons: Res<Input<MouseButton>>,
     controllers: Query<&OrbitCameraController>,
 ) {
     // Can only control one camera at a time.
@@ -281,7 +298,6 @@ fn camera_input_map(
     };
     let OrbitCameraController {
         mouse_rotate_sensitivity,
-        mouse_translate_sensitivity,
         ..
     } = *controller;
 
@@ -292,12 +308,6 @@ fn camera_input_map(
 
     if cursor_delta != Vec2::ZERO {
         events.send(ControlEvent::Orbit(mouse_rotate_sensitivity * cursor_delta));
-    }
-
-    if mouse_buttons.pressed(MouseButton::Right) {
-        events.send(ControlEvent::TranslateTarget(
-            mouse_translate_sensitivity * cursor_delta,
-        ));
     }
 }
 
