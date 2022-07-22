@@ -104,7 +104,11 @@ fn setup(
     });
 
     // Monster
-    spawn_monster(&mut commands, &asset_server);
+    spawn_monster(
+        Transform::from_xyz(2., 2., 2.),
+        &mut commands,
+        &asset_server,
+    );
 
     commands.insert_resource(MonsterAnimations {
         idle: asset_server.load("monster-idleGLTF.glb#Animation0"),
@@ -138,10 +142,10 @@ fn setup(
     });
 }
 
-fn spawn_monster(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+fn spawn_monster(transform: Transform, commands: &mut Commands, asset_server: &Res<AssetServer>) {
     commands
         .spawn_bundle(TransformBundle {
-            local: Transform::from_xyz(0., 1.0, 10.).with_scale(Vec3::ONE * 1.4),
+            local: transform.with_scale(Vec3::ONE * 1.4),
             global: GlobalTransform::identity(),
         })
         .with_children(|parent| {
@@ -344,7 +348,7 @@ fn find_animation_player_entity(
 struct Projectile;
 
 fn detect_projectile_collision(
-    detection: Query<Entity, With<HitDetection>>,
+    detection: Query<&Transform, With<HitDetection>>,
     projectiles: Query<Entity, With<Projectile>>,
     mut collision_events: EventReader<CollisionEvent>,
     mut commands: Commands,
@@ -355,9 +359,9 @@ fn detect_projectile_collision(
             let detection = detection.get(*a).or_else(|_| detection.get(*b));
             let projectile = projectiles.get(*a).or_else(|_| projectiles.get(*b));
 
-            if let (Ok(detection), Ok(_)) = (detection, projectile) {
+            if let (Ok(transform), Ok(_)) = (detection, projectile) {
                 // commands.entity(detection).remove::<Projectile>();
-                spawn_monster(&mut commands, &asset_server);
+                spawn_monster(*transform, &mut commands, &asset_server);
             }
         }
     }
@@ -393,7 +397,7 @@ fn launch_projectile(
         .spawn()
         .insert(RigidBody::Dynamic)
         .insert(Velocity {
-            linvel: direction * 100.,
+            linvel: direction * 200.,
             angvel: Vec3::ZERO,
             // angvel: Vec3::new(0.2, 0.4, 0.8),
         })
