@@ -1,6 +1,7 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_editor_pls::prelude::*;
 use bevy_rapier3d::prelude::*;
+use bevy_atmosphere;
 use smooth_bevy_cameras::{
     controllers::orbit::{
         ControlEvent, OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin,
@@ -33,6 +34,11 @@ fn main() {
         .add_system(hacky_height_fix)
         .add_system(launch_projectile)
         .add_system(detect_projectile_collision)
+        .insert_resource(bevy_atmosphere::AtmosphereMat::default())
+        .add_plugin(bevy_atmosphere::AtmospherePlugin {
+            dynamic: false,
+            sky_radius: 100.0,
+        })
         .run();
 }
 
@@ -61,7 +67,13 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut windows: ResMut<Windows>,
 ) {
+    // Lock cursor
+    let window = windows.get_primary_mut().unwrap();
+    window.set_cursor_lock_mode(true);
+    window.set_cursor_visibility(false);
+
     // 3D Camera
     commands
         .spawn_bundle(PerspectiveCameraBundle::default())
