@@ -1,0 +1,9 @@
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\bevy_inspector_egui_derive-e9a9629d3aa58af1.dll: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\attributes.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\inspectable_enum.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\inspectable_struct.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\utils.rs
+
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\bevy_inspector_egui_derive-e9a9629d3aa58af1.d: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\attributes.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\inspectable_enum.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\inspectable_struct.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\utils.rs
+
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\lib.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\attributes.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\inspectable_enum.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\inspectable_struct.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\bevy-inspector-egui-derive-0.11.0\src\utils.rs:

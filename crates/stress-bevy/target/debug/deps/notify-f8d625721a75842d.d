@@ -1,0 +1,11 @@
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\notify-f8d625721a75842d.rmeta: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\windows.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\event.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\null.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\poll.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\config.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\error.rs
+
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\notify-f8d625721a75842d.d: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\windows.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\event.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\null.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\poll.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\config.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\error.rs
+
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\lib.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\windows.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\event.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\null.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\poll.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\config.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\notify-5.0.0-pre.11\src\error.rs:
