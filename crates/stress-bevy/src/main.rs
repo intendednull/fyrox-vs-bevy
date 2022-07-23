@@ -93,11 +93,11 @@ fn setup(
     commands
         .spawn()
         .insert_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 200.})),
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 500.})),
             material: materials.add(Color::hex("43bc68").unwrap().into()),
             ..default()
         })
-        .insert(Collider::cuboid(100.0, 0.01, 100.0))
+        .insert(Collider::cuboid(250.0, 0.01, 250.0))
         .insert(RigidBody::KinematicPositionBased)
         .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
 
@@ -129,7 +129,9 @@ fn setup(
             Collider::cuboid(2., 9., 2.),
             Friction::coefficient(0.),
             Character,
-        ));
+        ))
+        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
+        .insert(Damping {linear_damping: 0.5, angular_damping: 1.0});
 
     commands.insert_resource(CharacterAnimations {
         idle: asset_server.load("m_player.glb#Animation0"),
@@ -138,7 +140,7 @@ fn setup(
     // Directional Light
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {
-            illuminance: 10000.,
+            illuminance: 50000.,
             color: Color::hex("fef6f0").unwrap(),
             shadows_enabled: true,
             ..default()
@@ -154,7 +156,7 @@ fn setup(
     // Ambient Light
     commands.insert_resource(AmbientLight {
         color: Color::hex("606b9f").unwrap(),
-        brightness: 0.1,
+        brightness: 0.3,
     });
 }
 
@@ -176,7 +178,9 @@ fn spawn_monster(transform: Transform, commands: &mut Commands, asset_server: &R
             Monster,
             HackyHeightFix,
             HitDetection,
-        ));
+        ))
+        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
+        .insert(Damping {linear_damping: 0.5, angular_damping: 1.0});
 }
 
 // Once the scene is loaded, start the animation
