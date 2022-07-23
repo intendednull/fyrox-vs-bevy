@@ -3816,6 +3816,7 @@ dependencies = [
  "bevy 0.7.0",
  "bevy_atmosphere",
  "bevy_editor_pls",
+ "bevy_egui",
  "bevy_rapier3d",
  "bevy_turborand",
  "smooth-bevy-cameras",

@@ -6,12 +6,15 @@ use bevy_rapier3d::prelude::*;
 use bevy_atmosphere;
 use bevy_turborand::{*, rng::Rng};
 use bevy_turborand::rng::{rng, CellState};
+use game_ui::GameUiPlugin;
 use smooth_bevy_cameras::{
     controllers::orbit::{
         ControlEvent, OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin,
     },
     LookTransform, LookTransformPlugin,
 };
+
+mod game_ui;
 
 const ARENA_SIZE_HALF: (f32, f32) = (250., 250.);
 const MONSTER_SPAWN_PADDING: f32 = 15.;
@@ -25,8 +28,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(EditorPlugin)
+        //.add_plugin(EditorPlugin)
         .add_plugin(LookTransformPlugin)
+        .add_plugin(GameUiPlugin)
         .add_plugin(OrbitCameraPlugin {
             override_input_system: true,
         })
