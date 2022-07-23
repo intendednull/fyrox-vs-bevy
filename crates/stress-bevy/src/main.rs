@@ -407,6 +407,7 @@ fn detect_projectile_collision(
             if let (Ok(transform), Ok(_)) = (detection, projectile) {
                 // commands.entity(detection).remove::<Projectile>();
                 spawn_monster(*transform, &mut commands, &asset_server);
+                commands.entity(projectile.unwrap()).despawn();
             }
         }
     }
