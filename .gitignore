@@ -1,2 +1,3 @@
 /target
 /crates/stress-bevy/target
+crates/stress-bevy/target/.rustc_info.json
