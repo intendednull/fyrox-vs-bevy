@@ -93,24 +93,13 @@ fn setup(
     commands
         .spawn()
         .insert_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 100. })),
-            material: materials.add(Color::ALICE_BLUE.into()),
-            ..Default::default()
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 200.})),
+            material: materials.add(Color::hex("43bc68").unwrap().into()),
+            ..default()
         })
         .insert(Collider::cuboid(100.0, 0.01, 100.0))
         .insert(RigidBody::KinematicPositionBased)
         .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
-
-    // light
-    commands.spawn_bundle(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
 
     // Monster
     spawn_monster(
@@ -144,6 +133,28 @@ fn setup(
 
     commands.insert_resource(CharacterAnimations {
         idle: asset_server.load("m_player.glb#Animation0"),
+    });
+
+    // Directional Light
+    commands.spawn_bundle(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: 10000.,
+            color: Color::hex("fef6f0").unwrap(),
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-45.),
+            ..default()
+        },
+        ..default()
+    });
+    
+    // Ambient Light
+    commands.insert_resource(AmbientLight {
+        color: Color::hex("606b9f").unwrap(),
+        brightness: 0.1,
     });
 }
 
