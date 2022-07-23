@@ -1,0 +1,18 @@
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\typenum-b03ba90eccca8b55.rmeta: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\bit.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\int.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\marker_traits.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\operator_aliases.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\private.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\type_operators.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\uint.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\array.rs p:\Rust\ Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\op.rs p:\Rust\ Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\consts.rs
+
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\typenum-b03ba90eccca8b55.d: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\bit.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\int.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\marker_traits.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\operator_aliases.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\private.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\type_operators.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\uint.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\array.rs p:\Rust\ Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\op.rs p:\Rust\ Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\consts.rs
+
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\lib.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\bit.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\int.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\marker_traits.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\operator_aliases.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\private.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\type_operators.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\uint.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\typenum-1.15.0\src\array.rs:
+p:\Rust\ Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\op.rs:
+p:\Rust\ Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\consts.rs:
+
+# env-dep:TYPENUM_BUILD_CONSTS=p:\\Rust Games\\fyrox-vs-bevy\\crates\\stress-bevy\\target\\debug\\build\\typenum-ef53e9b39351437a\\out\\consts.rs
+# env-dep:TYPENUM_BUILD_OP=p:\\Rust Games\\fyrox-vs-bevy\\crates\\stress-bevy\\target\\debug\\build\\typenum-ef53e9b39351437a\\out\\op.rs

@@ -1,0 +1,2 @@
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\consts.rs
+cargo:rustc-env=TYPENUM_BUILD_OP=p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\build\typenum-ef53e9b39351437a\out\op.rs
