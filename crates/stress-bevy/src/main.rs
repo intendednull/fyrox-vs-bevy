@@ -1,4 +1,8 @@
-use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy::{
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    input::mouse::MouseMotion,
+    prelude::*,
+};
 use bevy_editor_pls::prelude::*;
 use bevy_rapier3d::prelude::*;
 use smooth_bevy_cameras::{
@@ -13,12 +17,18 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin)
+        .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(EditorPlugin)
         .add_plugin(LookTransformPlugin)
         .add_plugin(OrbitCameraPlugin {
             override_input_system: true,
         })
         .add_startup_system(setup)
+        .insert_resource(UiData {
+            monster_count: default(),
+            projectile_count: default(),
+        })
         .add_system(setup_scene_once_loaded)
         .add_system(
             camera_input_map
@@ -33,6 +43,7 @@ fn main() {
         .add_system(hacky_height_fix)
         .add_system(launch_projectile)
         .add_system(detect_projectile_collision)
+        .add_system(update_ui_data)
         .run();
 }
 
@@ -61,6 +72,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut ui_data: ResMut<UiData>,
 ) {
     // 3D Camera
     commands
@@ -74,6 +86,33 @@ fn setup(
 
     // UI Camera
     commands.spawn_bundle(UiCameraBundle::default());
+
+    commands.spawn_bundle(TextBundle {
+        style: Style {
+            position_type: PositionType::Absolute,
+            position: Rect {
+                top: Val::Px(40.0),
+                left: Val::Px(15.0),
+                ..default()
+            },
+            ..default()
+        },
+        // Use the `Text::with_section` constructor
+        text: Text::with_section(
+            ui_data.to_string(),
+            TextStyle {
+                font: asset_server.load("Rubik-VariableFont_wght.ttf"),
+                font_size: 20.0,
+                color: Color::WHITE,
+            },
+            // Note: You can use `Default::default()` in place of the `TextAlignment`
+            TextAlignment {
+                horizontal: HorizontalAlign::Center,
+                ..default()
+            },
+        ),
+        ..default()
+    });
 
     commands.spawn_bundle(ImageBundle {
         style: Style {
@@ -117,6 +156,7 @@ fn setup(
         Transform::from_xyz(2., 2., 2.),
         &mut commands,
         &asset_server,
+        &mut ui_data,
     );
 
     commands.insert_resource(MonsterAnimations {
@@ -147,7 +187,12 @@ fn setup(
     });
 }
 
-fn spawn_monster(transform: Transform, commands: &mut Commands, asset_server: &Res<AssetServer>) {
+fn spawn_monster(
+    transform: Transform,
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    ui_data: &mut UiData,
+) {
     commands
         .spawn_bundle(TransformBundle {
             local: transform.with_scale(Vec3::ONE * 1.4),
@@ -166,6 +211,8 @@ fn spawn_monster(transform: Transform, commands: &mut Commands, asset_server: &R
             HackyHeightFix,
             HitDetection,
         ));
+
+    ui_data.monster_count += 1;
 }
 
 // Once the scene is loaded, start the animation
@@ -188,6 +235,36 @@ fn setup_scene_once_loaded(
         }
 
         commands.entity(id).remove::<AnimationHelper>();
+    }
+}
+
+struct UiData {
+    monster_count: usize,
+    projectile_count: usize,
+}
+
+impl std::fmt::Display for UiData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display())
+    }
+}
+
+impl UiData {
+    fn display(&self) -> String {
+        format!(
+            "Monsters: {}\nProjectiles: {}",
+            self.monster_count, self.projectile_count
+        )
+    }
+}
+
+fn update_ui_data(mut query: Query<&mut Text>, data: Res<UiData>) {
+    if !data.is_changed() {
+        return;
+    }
+
+    for mut text in query.iter_mut() {
+        text.sections[0].value = data.to_string();
     }
 }
 
@@ -371,6 +448,7 @@ fn detect_projectile_collision(
     mut collision_events: EventReader<CollisionEvent>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    mut ui_data: ResMut<UiData>,
 ) {
     for collision_event in collision_events.iter() {
         if let CollisionEvent::Started(a, b, _flags) = collision_event {
@@ -379,7 +457,7 @@ fn detect_projectile_collision(
 
             if let (Ok(transform), Ok(_)) = (detection, projectile) {
                 // commands.entity(detection).remove::<Projectile>();
-                spawn_monster(*transform, &mut commands, &asset_server);
+                spawn_monster(*transform, &mut commands, &asset_server, &mut ui_data);
             }
         }
     }
@@ -392,6 +470,7 @@ fn launch_projectile(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut ui_data: ResMut<UiData>,
 ) {
     if !mouse_button.just_pressed(MouseButton::Left) {
         return;
@@ -432,4 +511,6 @@ fn launch_projectile(
             Projectile,
             ActiveEvents::COLLISION_EVENTS,
         ));
+
+    ui_data.projectile_count += 1;
 }
