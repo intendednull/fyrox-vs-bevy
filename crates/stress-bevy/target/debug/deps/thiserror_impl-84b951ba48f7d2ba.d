@@ -1,0 +1,12 @@
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\thiserror_impl-84b951ba48f7d2ba.dll: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\ast.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\attr.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\expand.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\fmt.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\generics.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\prop.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\valid.rs
+
+p:\Rust Games\fyrox-vs-bevy\crates\stress-bevy\target\debug\deps\thiserror_impl-84b951ba48f7d2ba.d: C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\lib.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\ast.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\attr.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\expand.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\fmt.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\generics.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\prop.rs C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\valid.rs
+
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\lib.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\ast.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\attr.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\expand.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\fmt.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\generics.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\prop.rs:
+C:\Users\brick\.cargo\registry\src\github.com-1ecc6299db9ec823\thiserror-impl-1.0.31\src\valid.rs:

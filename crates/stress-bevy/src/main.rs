@@ -1,12 +1,24 @@
+use std::ops::Add;
+
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_editor_pls::prelude::*;
 use bevy_rapier3d::prelude::*;
+use bevy_atmosphere;
+use bevy_turborand::{*, rng::Rng};
+use bevy_turborand::rng::{rng, CellState};
 use smooth_bevy_cameras::{
     controllers::orbit::{
         ControlEvent, OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin,
     },
     LookTransform, LookTransformPlugin,
 };
+
+const ARENA_SIZE_HALF: (f32, f32) = (250., 250.);
+const MONSTER_SPAWN_PADDING: f32 = 15.;
+const WAVE_DELAY_SECONDS: f32 = 3.;
+const MONSTERS_PER_WAVE: i32 = 10;
+
+static mut CURRENT_WAVE_TIMER: f32 = WAVE_DELAY_SECONDS;
 
 fn main() {
     App::new()
@@ -33,6 +45,12 @@ fn main() {
         .add_system(hacky_height_fix)
         .add_system(launch_projectile)
         .add_system(detect_projectile_collision)
+        .add_system(spawn_waves)
+        .insert_resource(bevy_atmosphere::AtmosphereMat::default())
+        .add_plugin(bevy_atmosphere::AtmospherePlugin {
+            dynamic: false,
+            sky_radius: 100.0,
+        })
         .run();
 }
 
@@ -61,7 +79,13 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut windows: ResMut<Windows>,
 ) {
+    // Lock cursor
+    let window = windows.get_primary_mut().unwrap();
+    window.set_cursor_lock_mode(true);
+    window.set_cursor_visibility(false);
+
     // 3D Camera
     commands
         .spawn_bundle(PerspectiveCameraBundle::default())
@@ -93,28 +117,17 @@ fn setup(
     commands
         .spawn()
         .insert_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 100. })),
-            material: materials.add(Color::ALICE_BLUE.into()),
-            ..Default::default()
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 500.})),
+            material: materials.add(Color::hex("43bc68").unwrap().into()),
+            ..default()
         })
-        .insert(Collider::cuboid(100.0, 0.01, 100.0))
+        .insert(Collider::cuboid(ARENA_SIZE_HALF.0, 0.01, ARENA_SIZE_HALF.1))
         .insert(RigidBody::KinematicPositionBased)
         .insert_bundle(TransformBundle::from(Transform::from_xyz(0.0, -2.0, 0.0)));
 
-    // light
-    commands.spawn_bundle(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
-
     // Monster
     spawn_monster(
-        Transform::from_xyz(2., 2., 2.),
+        Vec3::new(2., 2., 2.),
         &mut commands,
         &asset_server,
     );
@@ -140,19 +153,63 @@ fn setup(
             Collider::cuboid(2., 9., 2.),
             Friction::coefficient(0.),
             Character,
-        ));
+        ))
+        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
+        .insert(Damping {linear_damping: 0.5, angular_damping: 1.0});
 
     commands.insert_resource(CharacterAnimations {
         idle: asset_server.load("m_player.glb#Animation0"),
     });
+
+    // Directional Light
+    commands.spawn_bundle(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: 50000.,
+            color: Color::hex("fef6f0").unwrap(),
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-45.),
+            ..default()
+        },
+        ..default()
+    });
+    
+    // Ambient Light
+    commands.insert_resource(AmbientLight {
+        color: Color::hex("606b9f").unwrap(),
+        brightness: 0.3,
+    });
 }
 
-fn spawn_monster(transform: Transform, commands: &mut Commands, asset_server: &Res<AssetServer>) {
+fn spawn_waves(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    time: Res<Time>) {
+
+    unsafe {
+        CURRENT_WAVE_TIMER += time.delta_seconds();
+
+        if CURRENT_WAVE_TIMER >= WAVE_DELAY_SECONDS {
+            let rng = Rng::<CellState>::default();
+            CURRENT_WAVE_TIMER = 0.;
+            let mut temp_spawn_loc: Vec3 = Vec3::ZERO;
+
+            for i in 0..MONSTERS_PER_WAVE {
+                temp_spawn_loc.x = rng.f32_normalized() * ARENA_SIZE_HALF.1;
+                temp_spawn_loc.y = 1.;
+                temp_spawn_loc.z = rng.f32_normalized() * ARENA_SIZE_HALF.1;
+                spawn_monster(temp_spawn_loc, &mut commands, &asset_server);
+            }
+        }
+    }
+}
+
+fn spawn_monster(spawn_loc: Vec3, commands: &mut Commands, asset_server: &Res<AssetServer>) {
     commands
-        .spawn_bundle(TransformBundle {
-            local: transform.with_scale(Vec3::ONE * 1.4),
-            global: GlobalTransform::identity(),
-        })
+        .spawn_bundle(TransformBundle::from(Transform::from_xyz(spawn_loc.x, spawn_loc.y, spawn_loc.z)))
         .with_children(|parent| {
             let my_gltf = asset_server.load("monster-idleGLTF.glb#Scene0");
             parent.spawn_scene(my_gltf);
@@ -165,7 +222,9 @@ fn spawn_monster(transform: Transform, commands: &mut Commands, asset_server: &R
             Monster,
             HackyHeightFix,
             HitDetection,
-        ));
+        ))
+        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
+        .insert(Damping {linear_damping: 0.5, angular_damping: 1.0});
 }
 
 // Once the scene is loaded, start the animation
@@ -379,7 +438,8 @@ fn detect_projectile_collision(
 
             if let (Ok(transform), Ok(_)) = (detection, projectile) {
                 // commands.entity(detection).remove::<Projectile>();
-                spawn_monster(*transform, &mut commands, &asset_server);
+                //spawn_monster(Vec3::new(0., 0., 0.), &mut commands, &asset_server);
+                commands.entity(projectile.unwrap()).despawn();
             }
         }
     }
